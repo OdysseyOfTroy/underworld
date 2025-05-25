@@ -1,3 +1,5 @@
+use crate::cipher_traits::CipherTraits;
+
 pub struct Caesar {
     shift: u8,
 }
@@ -7,29 +9,31 @@ impl Caesar {
         Self { shift: shift % 26 }
     }
 
-fn encrypt(&self, plain_text: &str) -> String {
-    plain_text
-        .chars()
-        .map(|c| Self::shift_char(c, self.shift))
-        .collect()
-}
-
-fn decrypt(&self, encrpyted_text: &str) -> String {
-    encrpyted_text
-        .chars()
-        .map(|c| Self::shift_char(c, 26 - self.shift))
-        .collect()
-}
-
-fn shift_char(c: char, amount: u8) -> char {
-    if c.is_ascii_uppercase() {
-        (((c as u8 - b'A' + amount) % 26) + b'A') as char
-    } else if c.is_ascii_lowercase() {
-        (((c as u8 - b'a' + amount) % 26) + b'a') as char
-    } else {
-        c
+    fn shift_char(c: char, amount: u8) -> char {
+        if c.is_ascii_uppercase() {
+            (((c as u8 - b'A' + amount) % 26) + b'A') as char
+        } else if c.is_ascii_lowercase() {
+            (((c as u8 - b'a' + amount) % 26) + b'a') as char
+        } else {
+            c
+        }
     }
 }
+
+impl CipherTraits for Caesar {
+    fn encrypt(&self, plain_text: &str) -> String {
+        plain_text
+            .chars()
+            .map(|c| Self::shift_char(c, self.shift))
+            .collect()
+    }
+
+    fn decrypt(&self, encrpyted_text: &str) -> String {
+        encrpyted_text
+            .chars()
+            .map(|c| Self::shift_char(c, 26 - self.shift))
+            .collect()
+    }
 }
 
 #[cfg(test)]
