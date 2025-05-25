@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "Underworld"
+name = "underworld"
 version = "0.1.0"
