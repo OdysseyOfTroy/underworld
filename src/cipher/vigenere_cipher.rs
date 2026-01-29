@@ -1,31 +1,35 @@
 use crate::cipher::cipher_traits::CipherTraits;
 
+#[derive(Default)]
 pub struct Vigenere {
-    pub keyword: Vec<u8>,
+    pub keyword: String,
+    key: Vec<u8>,
 }
 
 impl Vigenere {
-    pub fn new(keyword: &str) -> Self {
-        let keyword = keyword
-            .chars()
+    pub fn new(keyword: impl Into<String>) -> Self {
+        let keyword = keyword.into();
+
+        let key = keyword
+            .bytes()
             .filter(|c| c.is_ascii_alphabetic())
-            .map(|c| c.to_ascii_uppercase() as u8 - b'A')
+            .map(|c| c.to_ascii_uppercase() - b'A')
             .collect();
-        Self { keyword }
+        Self { keyword, key }
     }
 }
 
 impl CipherTraits for Vigenere {
    fn encrypt(&self, plain_text: &str) -> String {
-       vigenere_transform(plain_text, &self.keyword, false)
+       vigenere_transform(plain_text, &self.key, false)
    } 
 
    fn decrypt(&self, cipher_text: &str) -> String {
-       vigenere_transform(cipher_text, &self.keyword, true)
+       vigenere_transform(cipher_text, &self.key, true)
    }
 }
 
-fn vigenere_transform(plain_text: &str, keyword: &[u8], decrypt: bool) -> String {
+fn vigenere_transform(plain_text: &str, key: &[u8], decrypt: bool) -> String {
     let mut result = String::new();
     let mut key_index = 0;
 
@@ -34,7 +38,7 @@ fn vigenere_transform(plain_text: &str, keyword: &[u8], decrypt: bool) -> String
             let is_upper = c.is_uppercase();
             let base = if is_upper { b'A' } else { b'a' };
             let offset = c as u8 - base;
-            let key = keyword[key_index % keyword.len()];
+            let key = key[key_index % key.len()];
             let shift = if decrypt {
                 (26 + offset - key) % 26
             } else {
