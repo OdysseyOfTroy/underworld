@@ -1,10 +1,38 @@
-use crate::cipher_traits::CipherTraits;
+use iced::{widget::{button, column, Column}};
 
+use crate::cipher::cipher_traits::CipherTraits;
+
+#[derive(Default)]
 pub struct Caesar {
-    shift: u8,
+    pub shift: u8,
 }
 
+#[derive(Debug, Clone)]
+pub enum Message {
+    Increment,
+    Decrement
+}
+
+
 impl Caesar {
+    pub fn view(&self) -> Column<'_, Message> {
+        column![
+            button("test").on_press(Message::Increment),
+        ]
+    
+    }
+
+    pub fn update(&mut self, message: Message) {
+        match message {
+            Message::Increment => {
+                self.shift += 1;
+            }
+            Message::Decrement => {
+                self.shift -= 1;
+            }
+        }
+    }
+
     pub fn new(shift: u8) -> Self {
         Self { shift: shift % 26 }
     }

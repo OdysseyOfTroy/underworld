@@ -1,7 +1,13 @@
 use simple_user_input::get_input;
-use underworld::{caesar_cipher::Caesar, cipher_traits::CipherTraits, vigenere_cipher::Vigenere};
+use crate::cipher::{caesar_cipher::Caesar, cipher_traits::CipherTraits, vigenere_cipher::Vigenere, Cipher};
 
-fn main() {
+pub mod cipher;
+
+fn main() -> iced::Result {
+    iced::run(Cipher::update, Cipher::view)
+}
+
+fn basic() {
   let input: String = get_input("give me a string to encrypt");
   
   let ceaser_cipher = Caesar::new(10);

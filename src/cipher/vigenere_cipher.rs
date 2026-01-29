@@ -1,7 +1,7 @@
-use crate::cipher_traits::CipherTraits;
+use crate::cipher::cipher_traits::CipherTraits;
 
 pub struct Vigenere {
-    keyword: Vec<u8>,
+    pub keyword: Vec<u8>,
 }
 
 impl Vigenere {
