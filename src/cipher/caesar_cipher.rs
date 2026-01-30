@@ -1,19 +1,23 @@
 use crate::cipher::cipher_traits::CipherTraits;
 
 pub struct Caesar {
-    pub shift: u8,
+    pub shift: i16,
 }
 
 impl Caesar {
-    pub fn new(shift: u8) -> Self {
-        Self { shift: shift % 26 }
+    pub fn new(shift: i16) -> Self {
+        Self { shift: shift.rem_euclid(26) }
     }
 
-    fn shift_char(c: char, amount: u8) -> char {
+    fn shift_char(&self, c: char) -> char {
         if c.is_ascii_uppercase() {
-            (((c as u8 - b'A' + amount) % 26) + b'A') as char
+            let base = b'A' as i16;
+            let shifted = (c as i16 - base + self.shift).rem_euclid(26)  + base; 
+            char::from_u32(shifted as u32).unwrap()
         } else if c.is_ascii_lowercase() {
-            (((c as u8 - b'a' + amount) % 26) + b'a') as char
+            let base = b'a' as i16;
+            let shifted = (c as i16 - base + self.shift).rem_euclid(26)  + base; 
+            char::from_u32(shifted as u32).unwrap()
         } else {
             c
         }
@@ -32,14 +36,15 @@ impl CipherTraits for Caesar {
     fn encrypt(&self, plain_text: &str) -> String {
         plain_text
             .chars()
-            .map(|c| Self::shift_char(c, self.shift))
+            .map(|c| self.shift_char(c))
             .collect()
     }
 
     fn decrypt(&self, encrpyted_text: &str) -> String {
+        let inverse = Caesar::new(-self.shift);
         encrpyted_text
             .chars()
-            .map(|c| Self::shift_char(c, 26 - self.shift))
+            .map(|c| inverse.shift_char(c ))
             .collect()
     }
 }
@@ -56,7 +61,6 @@ mod tests {
         let encrpyted = c.encrypt(plain_text);
         assert_eq!(encrpyted, expected);
     }
-
 
     #[test]
     fn caesar_upper_with_wrap_encrypts_correctly() {
