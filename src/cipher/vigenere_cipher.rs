@@ -22,48 +22,47 @@ impl Vigenere {
             .collect();
 
         if key.is_empty() {
-            return Err(VigenereError::EmptyKey)
+            return Err(VigenereError::EmptyKey);
         }
 
         Ok(Self { keyword, key })
     }
 
     pub fn transform(&self, plain_text: &str, decrypt: bool) -> String {
-    let mut result = String::new();
-    let mut key_index = 0;
+        let mut result = String::new();
+        let mut key_index = 0;
 
-    for c in plain_text.chars() {
-        if c.is_ascii_alphabetic() {
-            let is_upper = c.is_uppercase();
-            let base = if is_upper { b'A' } else { b'a' };
-            let offset = c as u8 - base;
-            let key = &self.key[key_index % &self.key.len()];
-            let shift = if decrypt {
-                (26 + offset - key) % 26
+        for c in plain_text.chars() {
+            if c.is_ascii_alphabetic() {
+                let is_upper = c.is_uppercase();
+                let base = if is_upper { b'A' } else { b'a' };
+                let offset = c as u8 - base;
+                let key = &self.key[key_index % self.key.len()];
+                let shift = if decrypt {
+                    (26 + offset - key) % 26
+                } else {
+                    (offset + key) % 26
+                };
+                result.push((base + shift) as char);
+                key_index += 1;
             } else {
-                (offset + key) % 26
-            };
-            result.push((base + shift) as char);
-            key_index += 1;
-        } else {
-            result.push(c);
+                result.push(c);
+            }
         }
-    }
 
-    result
-}
+        result
+    }
 }
 
 impl CipherTraits for Vigenere {
-   fn encrypt(&self, plain_text: &str) -> String {
-       transform(plain_text, false)
-   } 
+    fn encrypt(&self, plain_text: &str) -> String {
+        self.transform(plain_text, false)
+    }
 
-   fn decrypt(&self, cipher_text: &str) -> String {
-       vigenere_transform(cipher_text, &self.key, true)
-   }
+    fn decrypt(&self, cipher_text: &str) -> String {
+        self.transform(cipher_text, true)
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -101,7 +100,7 @@ mod tests {
         let encrypted = v.encrypt(plain);
         assert_eq!(expected, encrypted);
     }
-    
+
     #[test]
     fn vigenere_encrypt_decrypt() {
         let v = Vigenere::new("KEY").unwrap();
