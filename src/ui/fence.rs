@@ -3,10 +3,10 @@ use iced::{
     Element,
 };
 
-use crate::model::fence::Fence;
+use crate::{app::AppScreen, model::fence::Fence};
 
 #[derive(Clone, Debug)]
-pub enum Message {
+pub enum FenceMessage {
    BaseInputChanged(String), 
 }
 
@@ -20,8 +20,10 @@ pub struct FenceState {
     error: Option<String>,
 }
 
-impl FenceState {
-    pub fn view(&self) -> Element<'_, Message> {
+impl AppScreen for FenceState {
+    type Msg = FenceMessage;
+
+    fn view(&self) -> Element<'_, FenceMessage> {
         
     let computed_prices = self.parsed_base_price.map(|base| {
             (
@@ -37,7 +39,7 @@ impl FenceState {
                     &self.base_price_input,
                 )
                 .padding(10)
-                .on_input(Message::BaseInputChanged),
+                .on_input(FenceMessage::BaseInputChanged),
             )
             .push(
                 Row::new()
@@ -62,9 +64,9 @@ impl FenceState {
             .into()
         }
 
-    pub fn update(&mut self, message: Message) {
+    fn update(&mut self, message: FenceMessage) {
         match message {
-            Message::BaseInputChanged(input) => {
+            FenceMessage::BaseInputChanged(input) => {
                self.base_price_input = input.clone();
                match input.parse::<u64>() {
                     Ok(value) => {

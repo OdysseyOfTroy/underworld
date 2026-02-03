@@ -4,15 +4,22 @@ use crate::ui::{cipher::{self, CipherState}, fence::{self, FenceState}};
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    NavigateToFence,
-    NavigateToCipher,
-    Fence(fence::Message),
-    Cipher(cipher::Message),
+    Navigate(Screen),
+    Fence(fence::FenceMessage),
+    Cipher(cipher::CipherMessage),
 }
 
-enum Screen {
+#[derive(Debug, Clone)]
+pub enum Screen {
     Fence,
     Cipher,
+}
+
+pub trait AppScreen {
+    type Msg;
+
+    fn update(&mut self, msg: Self::Msg);
+    fn view(&self) -> Element<'_, Self::Msg>;
 }
 
 pub struct App {
@@ -36,10 +43,10 @@ impl App {
    pub fn view(&self) -> Element<'_, Message> {
         let nav = Row::new()
             .spacing(20)
-            .push(Button::new("Fence").on_press(Message::NavigateToFence))
-            .push(Button::new("Cipher").on_press(Message::NavigateToCipher));
+            .push(Button::new("Fence").on_press(Message::Navigate(Screen::Fence)))
+            .push(Button::new("Cipher").on_press(Message::Navigate(Screen::Cipher)));
 
-        let content = match self.screen {
+        let screen_view = match self.screen {
             Screen::Fence => self.fence.view().map(Message::Fence),
             Screen::Cipher => self.cipher.view().map(Message::Cipher),
         };
@@ -47,15 +54,13 @@ impl App {
         Column::new()
             .spacing(20)
             .push(nav)
-            .push(content)
+            .push(screen_view)
             .into()
     }
 
     pub fn update(&mut self, message: Message) {
 match message {
-            Message::NavigateToFence => self.screen = Screen::Fence,
-            Message::NavigateToCipher => self.screen = Screen::Cipher,
-
+            Message::Navigate(screen) => self.screen = screen,
             Message::Fence(msg) => self.fence.update(msg),
             Message::Cipher(msg) => self.cipher.update(msg),
         }

@@ -1,9 +1,9 @@
 use iced::{widget::{container, column, row, button, text, TextInput}, Element};
 
-use crate::model::cipher::{caesar_cipher::Caesar, vigenere_cipher::Vigenere, cipher_traits::CipherTraits};
+use crate::{app::AppScreen, model::cipher::{caesar_cipher::Caesar, cipher_traits::CipherTraits, vigenere_cipher::Vigenere}};
 
 #[derive(Debug, Clone)]
-pub enum Message {
+pub enum CipherMessage {
     Increment,
     Decrement,
     ContentChanged(String),
@@ -23,21 +23,23 @@ pub struct CipherState {
     vigenere_encrypted: String,
 }
 
-impl CipherState {
-    pub fn view(&self) -> Element<'_, Message> {
+impl AppScreen for CipherState {
+    type Msg = CipherMessage;
+
+    fn view(&self) -> Element<'_, CipherMessage> {
         container(column![
             row![
-                button("Increment").on_press(Message::Increment),
+                button("Increment").on_press(CipherMessage::Increment),
                 text(self.caesar_cipher.shift),
-                button("Decrement").on_press(Message::Decrement),
+                button("Decrement").on_press(CipherMessage::Decrement),
             ],
             row![
                 TextInput::new("keyword", &self.vigenere_keyword)
-                    .on_input(Message::ContentChanged)
+                    .on_input(CipherMessage::ContentChanged)
             ],
             row![
                 TextInput::new("text to encrypt", &self.to_encrypt)
-                    .on_input(Message::InputChanged)
+                    .on_input(CipherMessage::InputChanged)
             ],
             row![
                 text("the caesar encrypted string: "),
@@ -51,17 +53,17 @@ impl CipherState {
         .into()
     }
 
-    pub fn update(&mut self, message: Message) {
+    fn update(&mut self, message: CipherMessage) {
         match message {
-            Message::Increment => {
+            CipherMessage::Increment => {
                 self.caesar_cipher.shift += 1;
                 self.caesar_encrypted = Caesar::encrypt(&self.caesar_cipher, &self.to_encrypt)
             }
-            Message::Decrement => {
+            CipherMessage::Decrement => {
                 self.caesar_cipher.shift -= 1;
                 self.caesar_encrypted = Caesar::encrypt(&self.caesar_cipher, &self.to_encrypt)
             }
-            Message::ContentChanged(keyword) => {
+            CipherMessage::ContentChanged(keyword) => {
                 match Vigenere::new(&keyword) {
                     Ok(v) => self.vigenere_cipher = Some(v),
                     Err(_) => self.vigenere_cipher = None,
@@ -72,7 +74,7 @@ impl CipherState {
                     None => self.to_encrypt.clone(),
                 };
             }
-            Message::InputChanged(input) => {
+            CipherMessage::InputChanged(input) => {
                 self.to_encrypt = input;
                 self.caesar_encrypted = self.caesar_cipher.encrypt(&self.to_encrypt);
                 self.vigenere_encrypted = match &self.vigenere_cipher {
