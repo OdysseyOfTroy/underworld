@@ -29,6 +29,13 @@ pub struct App {
 }
 
 impl App {
+    pub fn title(&self) -> String {
+        match self.screen {
+            Screen::Fence => "Fence Calculator".into(),
+            Screen::Cipher => "Cipher Tool".into(),
+        }
+    }
+
    pub fn new() -> (Self, Task<Message>) {
         (
         Self {

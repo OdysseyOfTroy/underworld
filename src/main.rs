@@ -9,5 +9,6 @@ fn main() -> iced::Result {
         App::new,
         App::update,
         App::view,
-    ).run()
+    ).title(App::title)
+    .run()
 }
