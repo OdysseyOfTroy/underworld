@@ -1,4 +1,4 @@
-use crate::cipher::cipher_traits::CipherTraits;
+use super::cipher_traits::CipherTraits;
 
 pub struct Caesar {
     pub shift: i16,

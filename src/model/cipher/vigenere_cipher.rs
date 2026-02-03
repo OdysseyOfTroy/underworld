@@ -1,4 +1,4 @@
-use crate::cipher::cipher_traits::CipherTraits;
+use super::cipher_traits::CipherTraits;
 
 #[derive(Debug, PartialEq)]
 pub enum VigenereError {
