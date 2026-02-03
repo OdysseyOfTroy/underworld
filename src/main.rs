@@ -1,8 +1,13 @@
-use crate::cipher::Cipher;
+use crate::app::App;
 
-pub mod cipher;
-pub mod fence;
+pub mod app;
+pub mod model;
+pub mod ui;
 
 fn main() -> iced::Result {
-    iced::run(Cipher::update, Cipher::view)
+    iced::application(
+        App::new,
+        App::update,
+        App::view,
+    ).run()
 }
