@@ -1,13 +1,15 @@
 use iced::{
-    widget::{Column, Row, Text, TextInput},
     Element,
+    widget::{Row, Text, TextInput},
 };
+
+use crate::ui::components::{card::card, layout::vert_stack};
 
 use crate::{app::AppScreen, model::fence::Fence};
 
 #[derive(Clone, Debug)]
 pub enum FenceMessage {
-   BaseInputChanged(String), 
+    BaseInputChanged(String),
 }
 
 #[derive(Default)]
@@ -24,32 +26,34 @@ impl AppScreen for FenceState {
     type Msg = FenceMessage;
 
     fn view(&self) -> Element<'_, FenceMessage> {
-        
-    let computed_prices = self.parsed_base_price.map(|base| {
+        let computed_prices = self.parsed_base_price.map(|base| {
             (
-        self.fence.lowest_markup_price(base),
-        self.fence.avg_markup_price(base),
-        self.fence.highest_markup_price(base),
-        )
-     });
-        Column::new()
-            .push(
-                TextInput::new(
-                    "Enter base price",
-                    &self.base_price_input,
+                self.fence.lowest_markup_price(base),
+                self.fence.avg_markup_price(base),
+                self.fence.highest_markup_price(base),
+            )
+        });
+        card(
+            vert_stack()
+                .push(
+                    TextInput::new("Enter base price", &self.base_price_input)
+                        .padding(10)
+                        .on_input(FenceMessage::BaseInputChanged),
                 )
-                .padding(10)
-                .on_input(FenceMessage::BaseInputChanged),
-            )
-            .push(
-                Row::new()
-                    .spacing(20)
-                    .push(Text::new(format!("Low markup: {}", self.fence.lowest_markup)))
-                    .push(Text::new(format!("Avg markup: {}", self.fence.avg_markup)))
-                    .push(Text::new(format!("High markup: {}", self.fence.highest_markup))),
-            )
-            .push(
-                if let Some((low, avg, high)) = computed_prices {
+                .push(
+                    Row::new()
+                        .spacing(20)
+                        .push(Text::new(format!(
+                            "Low markup: {}",
+                            self.fence.lowest_markup
+                        )))
+                        .push(Text::new(format!("Avg markup: {}", self.fence.avg_markup)))
+                        .push(Text::new(format!(
+                            "High markup: {}",
+                            self.fence.highest_markup
+                        ))),
+                )
+                .push(if let Some((low, avg, high)) = computed_prices {
                     Row::new()
                         .spacing(20)
                         .push(Text::new(format!("Low: {}", low)))
@@ -59,16 +63,15 @@ impl AppScreen for FenceState {
                     Row::new().push(Text::new(error))
                 } else {
                     Row::new().push(Text::new("Enter a valid base price"))
-                },
-            )
-            .into()
-        }
+                }),
+        )
+    }
 
     fn update(&mut self, message: FenceMessage) {
         match message {
             FenceMessage::BaseInputChanged(input) => {
-               self.base_price_input = input.clone();
-               match input.parse::<u64>() {
+                self.base_price_input = input.clone();
+                match input.parse::<u64>() {
                     Ok(value) => {
                         self.parsed_base_price = Some(value);
                         self.error = None;

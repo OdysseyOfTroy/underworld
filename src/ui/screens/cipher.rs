@@ -1,6 +1,16 @@
-use iced::{widget::{container, column, row, button, text, TextInput}, Element};
+use iced::{
+    Element,
+    widget::{TextInput, button, row, text},
+};
 
-use crate::{app::AppScreen, model::cipher::{caesar_cipher::Caesar, cipher_traits::CipherTraits, vigenere_cipher::Vigenere}};
+use crate::ui::components::{card::card, layout::vert_stack};
+
+use crate::{
+    app::AppScreen,
+    model::cipher::{
+        caesar_cipher::Caesar, cipher_traits::CipherTraits, vigenere_cipher::Vigenere,
+    },
+};
 
 #[derive(Debug, Clone)]
 pub enum CipherMessage {
@@ -27,30 +37,31 @@ impl AppScreen for CipherState {
     type Msg = CipherMessage;
 
     fn view(&self) -> Element<'_, CipherMessage> {
-        container(column![
-            row![
+        card(
+            vert_stack()
+            .push(row![
                 button("Increment").on_press(CipherMessage::Increment),
                 text(self.caesar_cipher.shift),
                 button("Decrement").on_press(CipherMessage::Decrement),
-            ],
-            row![
+            ])
+            .push(row![
                 TextInput::new("keyword", &self.vigenere_keyword)
                     .on_input(CipherMessage::ContentChanged)
-            ],
-            row![
+            ])
+            .push(row![
                 TextInput::new("text to encrypt", &self.to_encrypt)
                     .on_input(CipherMessage::InputChanged)
-            ],
-            row![
+            ])
+            .push(row![
                 text("the caesar encrypted string: "),
                 text(&self.caesar_encrypted)
-            ],
-            row![
+            ])
+            .push(row![
                 text("the vigenere encrypted string: "),
                 text(&self.vigenere_encrypted)
-            ]
-        ])
-        .into()
+            ])
+        )
+        
     }
 
     fn update(&mut self, message: CipherMessage) {

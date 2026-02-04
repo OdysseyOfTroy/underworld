@@ -5,10 +5,7 @@ pub mod model;
 pub mod ui;
 
 fn main() -> iced::Result {
-    iced::application(
-        App::new,
-        App::update,
-        App::view,
-    ).title(App::title)
-    .run()
+    iced::application(App::new, App::update, App::view)
+        .title(App::title)
+        .run()
 }

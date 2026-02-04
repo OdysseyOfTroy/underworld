@@ -1,6 +1,10 @@
-use iced::{widget::{Button, Column, Row}, Element, Task};
+use iced::{
+    Element, Task,
+    widget::{Button, Column, Row},
+};
 
-use crate::ui::{cipher::{self, CipherState}, fence::{self, FenceState}};
+use crate::ui::screens::cipher::{self, CipherState};
+use crate::ui::screens::fence::{self, FenceState};
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -36,18 +40,18 @@ impl App {
         }
     }
 
-   pub fn new() -> (Self, Task<Message>) {
+    pub fn new() -> (Self, Task<Message>) {
         (
-        Self {
-            screen: Screen::Cipher,
-            fence: FenceState::default(),
-            cipher: CipherState::default(),
-        },
-        Task::none(),
+            Self {
+                screen: Screen::Cipher,
+                fence: FenceState::default(),
+                cipher: CipherState::default(),
+            },
+            Task::none(),
         )
     }
 
-   pub fn view(&self) -> Element<'_, Message> {
+    pub fn view(&self) -> Element<'_, Message> {
         let nav = Row::new()
             .spacing(20)
             .push(Button::new("Fence").on_press(Message::Navigate(Screen::Fence)))
@@ -58,15 +62,11 @@ impl App {
             Screen::Cipher => self.cipher.view().map(Message::Cipher),
         };
 
-        Column::new()
-            .spacing(20)
-            .push(nav)
-            .push(screen_view)
-            .into()
+        Column::new().spacing(20).push(nav).push(screen_view).into()
     }
 
     pub fn update(&mut self, message: Message) {
-match message {
+        match message {
             Message::Navigate(screen) => self.screen = screen,
             Message::Fence(msg) => self.fence.update(msg),
             Message::Cipher(msg) => self.cipher.update(msg),

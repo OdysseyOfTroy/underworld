@@ -17,12 +17,15 @@ impl Percentage {
         if (Self::MIN..=Self::MAX).contains(&percent) {
             Ok(Self(percent))
         } else {
-            Err(PercentageError::OutOfRange { min: Self::MIN, max: Self::MAX,})
+            Err(PercentageError::OutOfRange {
+                min: Self::MIN,
+                max: Self::MAX,
+            })
         }
     }
 
     fn apply_to(&self, base: u64) -> u64 {
-        base * self.0 /Self::VALUE_SCALE
+        base * self.0 / Self::VALUE_SCALE
     }
 
     pub fn markup_scaled(&self) -> u64 {
@@ -54,12 +57,22 @@ pub struct Fence {
 impl Default for Fence {
     fn default() -> Self {
         //Markup is 4 digits to allow for 1 decimal point. 1100 = 110%, 1205 = 120.5%
-        Self { reputation: 0, avg_markup: Percentage(1100), lowest_markup: Percentage(1080), highest_markup: Percentage(1205) }
+        Self {
+            reputation: 0,
+            avg_markup: Percentage(1100),
+            lowest_markup: Percentage(1080),
+            highest_markup: Percentage(1205),
+        }
     }
 }
 
 impl Fence {
-    pub fn new(reputation: u8, avg_markup: Percentage, lowest_markup: Percentage, highest_markup: Percentage) -> Self {
+    pub fn new(
+        reputation: u8,
+        avg_markup: Percentage,
+        lowest_markup: Percentage,
+        highest_markup: Percentage,
+    ) -> Self {
         Self {
             reputation,
             avg_markup,
@@ -71,7 +84,7 @@ impl Fence {
     pub fn avg_markup_price(&self, base_price: u64) -> u64 {
         self.avg_markup.apply_to(base_price)
     }
-    
+
     pub fn lowest_markup_price(&self, base_price: u64) -> u64 {
         self.lowest_markup.apply_to(base_price)
     }
@@ -87,7 +100,13 @@ mod tests {
     #[test]
     fn outside_range_percentage_fails() {
         let err = Percentage::try_new(100000000).unwrap_err();
-        assert_eq!(err, PercentageError::OutOfRange { min: Percentage::MIN, max: Percentage::MAX });
+        assert_eq!(
+            err,
+            PercentageError::OutOfRange {
+                min: Percentage::MIN,
+                max: Percentage::MAX
+            }
+        );
     }
 
     #[test]
@@ -113,7 +132,7 @@ mod tests {
         let result = fence.highest_markup_price(base_price);
         assert_eq!(1205, result);
     }
-    
+
     #[test]
     fn integar_trunc_works_as_intended() {
         let fence = Fence::default();
