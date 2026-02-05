@@ -1,7 +1,7 @@
 use std::fmt;
 
-#[derive(Debug)]
-pub struct Percentage(u64);
+#[derive(Debug, Clone)]
+pub struct Percentage(pub u64);
 
 #[derive(Debug, PartialEq)]
 pub enum PercentageError {
@@ -47,6 +47,7 @@ impl fmt::Display for Percentage {
     }
 }
 
+#[derive(Clone)]
 pub struct Fence {
     reputation: u8,
     pub avg_markup: Percentage,

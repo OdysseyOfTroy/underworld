@@ -39,29 +39,28 @@ impl AppScreen for CipherState {
     fn view(&self) -> Element<'_, CipherMessage> {
         card(
             vert_stack()
-            .push(row![
-                button("Increment").on_press(CipherMessage::Increment),
-                text(self.caesar_cipher.shift),
-                button("Decrement").on_press(CipherMessage::Decrement),
-            ])
-            .push(row![
-                TextInput::new("keyword", &self.vigenere_keyword)
-                    .on_input(CipherMessage::ContentChanged)
-            ])
-            .push(row![
-                TextInput::new("text to encrypt", &self.to_encrypt)
-                    .on_input(CipherMessage::InputChanged)
-            ])
-            .push(row![
-                text("the caesar encrypted string: "),
-                text(&self.caesar_encrypted)
-            ])
-            .push(row![
-                text("the vigenere encrypted string: "),
-                text(&self.vigenere_encrypted)
-            ])
+                .push(row![
+                    button("Increment").on_press(CipherMessage::Increment),
+                    text(self.caesar_cipher.shift),
+                    button("Decrement").on_press(CipherMessage::Decrement),
+                ])
+                .push(row![
+                    TextInput::new("keyword", &self.vigenere_keyword)
+                        .on_input(CipherMessage::ContentChanged)
+                ])
+                .push(row![
+                    TextInput::new("text to encrypt", &self.to_encrypt)
+                        .on_input(CipherMessage::InputChanged)
+                ])
+                .push(row![
+                    text("the caesar encrypted string: "),
+                    text(&self.caesar_encrypted)
+                ])
+                .push(row![
+                    text("the vigenere encrypted string: "),
+                    text(&self.vigenere_encrypted)
+                ]),
         )
-        
     }
 
     fn update(&mut self, message: CipherMessage) {
