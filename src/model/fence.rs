@@ -49,7 +49,8 @@ impl fmt::Display for Percentage {
 
 #[derive(Clone)]
 pub struct Fence {
-    reputation: u8,
+    pub name: String,
+    pub reputation: u8,
     pub avg_markup: Percentage,
     pub lowest_markup: Percentage,
     pub highest_markup: Percentage,
@@ -59,6 +60,7 @@ impl Default for Fence {
     fn default() -> Self {
         //Markup is 4 digits to allow for 1 decimal point. 1100 = 110%, 1205 = 120.5%
         Self {
+            name: String::from("Merchant"),
             reputation: 0,
             avg_markup: Percentage(1100),
             lowest_markup: Percentage(1080),
@@ -69,12 +71,14 @@ impl Default for Fence {
 
 impl Fence {
     pub fn new(
+        name: &str,
         reputation: u8,
         avg_markup: Percentage,
         lowest_markup: Percentage,
         highest_markup: Percentage,
     ) -> Self {
         Self {
+            name: name.to_string(),
             reputation,
             avg_markup,
             lowest_markup,
