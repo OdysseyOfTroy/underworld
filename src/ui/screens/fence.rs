@@ -4,11 +4,32 @@ use iced::{
     widget::{TextInput, column, container},
 };
 
-use crate::model::fence::Percentage;
+use crate::model::fence::{Percentage, PercentageError, parse_human_percentage};
 use crate::ui::components::modal::modal;
 use crate::ui::components::{card::card, fence_card::fence_card, layout::vert_stack};
 
 use crate::{app::AppScreen, model::fence::Fence};
+
+enum EditState {
+    Idle,
+    Editing(EditDraft),
+}
+
+struct EditDraft {
+    name: String,
+    rep: String,
+    lowest_markup: String,
+    avg_markup: String,
+    highest_markup: String,
+    errors: EditErrors,
+}
+
+#[derive(Default)]
+struct EditErrors {
+    lowest: Option<PercentageError>,
+    average: Option<PercentageError>,
+    highest: Option<PercentageError>,
+}
 
 #[derive(Clone, Debug)]
 pub enum FenceMessage {
@@ -20,11 +41,12 @@ pub enum FenceMessage {
     Lowest(String),
     Avg(String),
     Highest(String),
+    Edit(Fence),
+    Submit,
 }
 
 pub struct FenceState {
     fences: Vec<Fence>,
-    current_fence: Fence,
 
     show_create_fence_modal: bool,
 
@@ -33,10 +55,7 @@ pub struct FenceState {
 
     error: Option<String>,
 
-    raw_reputation: String,
-    raw_lowest_markup: String,
-    raw_avg_markup: String,
-    raw_highest_markup: String,
+    create_fence_state: EditState,
 }
 
 impl Default for FenceState {
@@ -53,15 +72,11 @@ impl Default for FenceState {
                 ),
             ]
             .to_vec(),
-            current_fence: Fence::default(),
             show_create_fence_modal: false,
             base_price_input: "".into(),
             parsed_base_price: Some(0),
             error: None,
-            raw_reputation: "".into(),
-            raw_lowest_markup: "".into(),
-            raw_avg_markup: "".into(),
-            raw_highest_markup: "".into(),
+            create_fence_state: EditState::Idle,
         }
     }
 }
@@ -90,45 +105,59 @@ impl AppScreen for FenceState {
                 .push(col),
         );
         if self.show_create_fence_modal {
-            let content = container(
-                column![
-                    text("New Fence").size(24),
+            let content = match &self.create_fence_state {
+                EditState::Idle => container(column![]),
+                EditState::Editing(draft) => container(
                     column![
+                        text("New Fence").size(24),
                         column![
-                            text("Name").size(12),
-                            text_input("Merchant", &self.current_fence.name)
-                                .on_input(FenceMessage::Name)
-                        ],
-                        column![
-                            text("reputation").size(12),
-                            text_input("enter a starting reputation", &self.raw_reputation)
-                                .on_input(FenceMessage::Reputation),
-                        ],
-                        column![
-                            text("lowest").size(12),
-                            text_input("enter a lowest markup price", &self.raw_lowest_markup)
-                                .on_input(FenceMessage::Lowest),
-                        ],
-                        column![
-                            text("avg").size(12),
-                            text_input("enter an average markup price", &self.raw_avg_markup)
-                                .on_input(FenceMessage::Avg),
-                        ],
-                        column![
-                            text("highest").size(12),
-                            text_input("enter a highest markup price", &self.raw_highest_markup)
-                                .on_input(FenceMessage::Highest),
+                            column![
+                                text("Name").size(12),
+                                text_input("Merchant", &draft.name).on_input(FenceMessage::Name)
+                            ],
+                            column![
+                                text("reputation").size(12),
+                                text_input("enter a starting reputation", &draft.rep)
+                                    .on_input(FenceMessage::Reputation),
+                            ],
+                            column![
+                                text("lowest").size(12),
+                                text_input("enter a lowest markup price", &draft.lowest_markup)
+                                    .on_input(FenceMessage::Lowest),
+                                match &draft.errors.lowest {
+                                    Some(err) => text(err.to_string()),
+                                    None => text(""),
+                                }
+                            ],
+                            column![
+                                text("avg").size(12),
+                                text_input("enter an average markup price", &draft.avg_markup)
+                                    .on_input(FenceMessage::Avg),
+                                match &draft.errors.average {
+                                    Some(err) => text(err.to_string()),
+                                    None => text(""),
+                                }
+                            ],
+                            column![
+                                text("highest").size(12),
+                                text_input("enter a highest markup price", &draft.highest_markup)
+                                    .on_input(FenceMessage::Highest),
+                                match &draft.errors.highest {
+                                    Some(err) => text(err.to_string()),
+                                    None => text(""),
+                                }
+                            ]
+                            .spacing(5),
+                            button(text("Create")).on_press(FenceMessage::Submit),
                         ]
-                        .spacing(5),
-                        button(text("Create")).on_press(FenceMessage::HideModal),
+                        .spacing(10),
                     ]
-                    .spacing(10),
-                ]
-                .spacing(20),
-            )
-            .width(300)
-            .padding(10)
-            .style(container::rounded_box);
+                    .spacing(20),
+                )
+                .width(300)
+                .padding(10)
+                .style(container::rounded_box),
+            };
             modal(base, content, FenceMessage::HideModal)
         } else {
             base
@@ -150,30 +179,89 @@ impl AppScreen for FenceState {
                     }
                 }
             }
-            FenceMessage::Name(name) => self.current_fence.name = name.to_string(),
+            FenceMessage::Name(name) => {
+                if let EditState::Editing(draft) = &mut self.create_fence_state {
+                    draft.name = name;
+                }
+            }
             FenceMessage::Reputation(rep) => {
-                self.raw_reputation = rep;
-                self.current_fence.reputation = self.raw_reputation.parse::<u8>().unwrap_or(0)
+                if let EditState::Editing(draft) = &mut self.create_fence_state {
+                    draft.rep = rep;
+                }
             }
             FenceMessage::Lowest(low) => {
-                self.raw_lowest_markup = low;
-                self.current_fence.lowest_markup =
-                    Percentage(self.raw_lowest_markup.parse::<u64>().unwrap_or(1000))
+                if let EditState::Editing(draft) = &mut self.create_fence_state {
+                    draft.lowest_markup = low;
+                }
             }
             FenceMessage::Avg(avg) => {
-                self.raw_avg_markup = avg;
-                self.current_fence.avg_markup =
-                    Percentage(self.raw_avg_markup.parse::<u64>().unwrap_or(1000))
+                if let EditState::Editing(draft) = &mut self.create_fence_state {
+                    draft.avg_markup = avg;
+                }
             }
             FenceMessage::Highest(high) => {
-                self.raw_highest_markup = high;
-                self.current_fence.highest_markup =
-                    Percentage(self.raw_highest_markup.parse::<u64>().unwrap_or(1000))
+                if let EditState::Editing(draft) = &mut self.create_fence_state {
+                    draft.highest_markup = high;
+                }
             }
             FenceMessage::ShowModal => {
+                if let EditState::Idle = self.create_fence_state {
+                    self.create_fence_state = EditState::Editing(EditDraft {
+                        name: String::new(),
+                        rep: String::new(),
+                        lowest_markup: String::new(),
+                        avg_markup: String::new(),
+                        highest_markup: String::new(),
+                        errors: EditErrors::default(),
+                    })
+                };
                 self.show_create_fence_modal = true;
             }
-            FenceMessage::HideModal => self.show_create_fence_modal = false,
+            FenceMessage::Edit(fence) => {
+                if let EditState::Idle = self.create_fence_state {
+                    self.create_fence_state = EditState::Editing(EditDraft {
+                        name: fence.name,
+                        rep: fence.reputation.to_string(),
+                        lowest_markup: fence.lowest_markup.to_string(),
+                        avg_markup: fence.avg_markup.to_string(),
+                        highest_markup: fence.highest_markup.to_string(),
+                        errors: EditErrors::default(),
+                    })
+                }
+            }
+            FenceMessage::HideModal => {
+                self.show_create_fence_modal = false;
+                self.create_fence_state = EditState::Idle
+            }
+            FenceMessage::Submit => {
+                if let EditState::Editing(draft) = &mut self.create_fence_state {
+                    let lowest = parse_human_percentage(&draft.lowest_markup);
+                    let average = parse_human_percentage(&draft.avg_markup);
+                    let highest = parse_human_percentage(&draft.highest_markup);
+
+                    draft.errors = EditErrors {
+                        lowest: lowest.as_ref().err().cloned(),
+                        average: average.as_ref().err().cloned(),
+                        highest: highest.as_ref().err().cloned(),
+                    };
+
+                    if let (Ok(rep), Ok(lowest), Ok(average), Ok(highest)) =
+                        (draft.rep.parse::<u8>(), lowest, average, highest)
+                    {
+                        let new_fence = Fence {
+                            name: draft.name.clone(),
+                            reputation: rep,
+                            lowest_markup: lowest,
+                            avg_markup: average,
+                            highest_markup: highest,
+                        };
+
+                        self.fences.push(new_fence);
+                        self.show_create_fence_modal = false;
+                        self.create_fence_state = EditState::Idle;
+                    }
+                }
+            }
         }
     }
 }

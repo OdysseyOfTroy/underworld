@@ -3,9 +3,19 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub struct Percentage(pub u64);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum PercentageError {
     OutOfRange { min: u64, max: u64 },
+    InvalidFormat,
+}
+
+impl fmt::Display for PercentageError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PercentageError::OutOfRange { min: _, max: _ } => write!(f, "Percentage outside range"),
+            PercentageError::InvalidFormat => write!(f, "Invalid Percentage format"),
+        }
+    }
 }
 
 impl Percentage {
@@ -13,7 +23,7 @@ impl Percentage {
     const MIN: u64 = 0;
     const MAX: u64 = 10_000;
 
-    fn try_new(percent: u64) -> Result<Self, PercentageError> {
+    pub fn try_new(percent: u64) -> Result<Self, PercentageError> {
         if (Self::MIN..=Self::MAX).contains(&percent) {
             Ok(Self(percent))
         } else {
@@ -27,17 +37,26 @@ impl Percentage {
     fn apply_to(&self, base: u64) -> u64 {
         base * self.0 / Self::VALUE_SCALE
     }
+}
 
-    pub fn markup_scaled(&self) -> u64 {
-        self.0 - Self::VALUE_SCALE
-    }
+pub fn parse_human_percentage(input: &str) -> Result<Percentage, PercentageError> {
+    let trimmed = input.trim().trim_end_matches('%');
+
+    let value: f64 = trimmed
+        .parse()
+        .map_err(|_| PercentageError::InvalidFormat)?;
+
+    let scaled = (value * 10.0).round() as u64;
+
+    let final_markup = scaled + 1000;
+
+    Percentage::try_new(final_markup)
 }
 
 impl fmt::Display for Percentage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let scaled = self.markup_scaled();
-        let whole = scaled / 10;
-        let fraction = scaled % 10;
+        let whole = self.0 / 10;
+        let fraction = self.0 % 10;
 
         if fraction == 0 {
             write!(f, "{whole}% markup")
@@ -47,7 +66,7 @@ impl fmt::Display for Percentage {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Fence {
     pub name: String,
     pub reputation: u8,
