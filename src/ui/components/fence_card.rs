@@ -1,15 +1,17 @@
 use crate::model::fence::Fence;
+use crate::ui::screens::fence::FenceMessage;
 use crate::ui::components::{card::card, layout::vert_stack};
 use iced::{
     Element,
-    widget::{Row, Text},
+    widget::{Row, Text, button},
 };
 
-pub fn fence_card<'a, Message: 'a>(
+    pub fn fence_card<'a>(
     fence: &Fence,
     base_price: Option<u64>,
     error: &'a Option<String>,
-) -> Element<'a, Message> {
+    on_edit: FenceMessage,
+) -> Element<'a, FenceMessage> {
     let computed_prices = base_price.map(|base| {
         (
             fence.lowest_markup_price(base),
@@ -19,6 +21,7 @@ pub fn fence_card<'a, Message: 'a>(
     });
     card(
         vert_stack()
+            .push(Row::new().push(button("Edit").on_press(on_edit)))
             .push(
                 Row::new()
                     .spacing(20)

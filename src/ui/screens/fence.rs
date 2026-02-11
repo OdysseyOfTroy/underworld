@@ -12,9 +12,11 @@ use crate::{app::AppScreen, model::fence::Fence};
 
 enum EditState {
     Idle,
-    Editing(EditDraft),
+    Editing{draft: EditDraft, index: usize},
+    Creating{draft: EditDraft},
 }
 
+#[derive(Default)]
 struct EditDraft {
     name: String,
     rep: String,
@@ -31,7 +33,7 @@ struct EditErrors {
     highest: Option<PercentageError>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum FenceMessage {
     BaseInputChanged(String),
     ShowModal,
@@ -41,14 +43,12 @@ pub enum FenceMessage {
     Lowest(String),
     Avg(String),
     Highest(String),
-    Edit(Fence),
+    Edit(usize),
     Submit,
 }
 
 pub struct FenceState {
     fences: Vec<Fence>,
-
-    show_create_fence_modal: bool,
 
     base_price_input: String,
     parsed_base_price: Option<u64>,
@@ -72,7 +72,6 @@ impl Default for FenceState {
                 ),
             ]
             .to_vec(),
-            show_create_fence_modal: false,
             base_price_input: "".into(),
             parsed_base_price: Some(0),
             error: None,
@@ -81,18 +80,28 @@ impl Default for FenceState {
     }
 }
 
+impl FenceState{
+    fn current_draft_mut(&mut self) -> Option<&mut EditDraft> {
+        match &mut self.create_fence_state {
+            EditState::Creating{ draft } => Some(draft),
+            EditState::Editing{ draft, ..} => Some(draft),
+            EditState::Idle => None
+        }
+    }
+}
+
 impl AppScreen for FenceState {
     type Msg = FenceMessage;
 
     fn view(&self) -> Element<'_, FenceMessage> {
-        let mut col = vert_stack();
-        for fence in &self.fences {
-            col = col.push(fence_card::<FenceMessage>(
+        let col = vert_stack().push(column(self.fences.iter().enumerate().map(|(i,fence)| {
+            fence_card(
                 fence,
                 self.parsed_base_price,
                 &self.error,
-            ))
-        }
+                FenceMessage::Edit(i)
+            )
+        })));
         let base = card(
             vert_stack()
                 .push(button("Add").on_press(FenceMessage::ShowModal))
@@ -104,10 +113,122 @@ impl AppScreen for FenceState {
                 .height(1200)
                 .push(col),
         );
-        if self.show_create_fence_modal {
-            let content = match &self.create_fence_state {
-                EditState::Idle => container(column![]),
-                EditState::Editing(draft) => container(
+
+        match &self.create_fence_state {
+                EditState::Idle => base, 
+                EditState::Creating{draft} => modal(base, fence_modal(draft, false), FenceMessage::HideModal),
+                EditState::Editing{ draft, ..} => modal(base, fence_modal(draft, true), FenceMessage:: HideModal)
+        }            
+    }
+
+    fn update(&mut self, message: FenceMessage) {
+        match message {
+            FenceMessage::BaseInputChanged(input) => {
+                self.base_price_input = input.clone();
+                match input.parse::<u64>() {
+                    Ok(value) => {
+                        self.parsed_base_price = Some(value);
+                        self.error = None;
+                    }
+                    Err(_) => {
+                        self.parsed_base_price = None;
+                        self.error = Some("Invalid number".into());
+                    }
+                }
+            }
+            FenceMessage::Name(name) => {
+                if let Some(draft) = self.current_draft_mut() {
+                draft.name = name;
+                }
+            }
+            FenceMessage::Reputation(rep) => {
+                if let Some(draft) = self.current_draft_mut() {
+                    draft.rep = rep;
+                }
+            }
+            FenceMessage::Lowest(low) => {
+                if let Some(draft) = self.current_draft_mut() {
+                    draft.lowest_markup = low;
+                }
+            }
+            FenceMessage::Avg(avg) => {
+                if let Some(draft) = self.current_draft_mut() {
+                    draft.avg_markup = avg;
+                }
+            }
+            FenceMessage::Highest(high) => {
+                if let Some(draft) = self.current_draft_mut() {
+                    draft.highest_markup = high;
+                }
+            }
+            FenceMessage::ShowModal => {
+                self.create_fence_state = EditState::Creating { draft: EditDraft::default()};
+            }
+            FenceMessage::Edit(index) => {
+                if let Some(fence) = self.fences.get(index) {
+                    self.create_fence_state = EditState::Editing{index, draft: EditDraft {
+                        name: fence.name.clone(),
+                        rep: fence.reputation.to_string(),
+                        lowest_markup: fence.lowest_markup.to_string(),
+                        avg_markup: fence.avg_markup.to_string(),
+                        highest_markup: fence.highest_markup.to_string(),
+                        errors: EditErrors::default(),
+                    }}
+                }
+            }
+            FenceMessage::HideModal => {
+                self.create_fence_state = EditState::Idle
+            }
+            FenceMessage::Submit => {
+                        if let Some(draft) = self.current_draft_mut() {
+
+
+                    let lowest = parse_human_percentage(&draft.lowest_markup);
+                    let average = parse_human_percentage(&draft.avg_markup);
+                    let highest = parse_human_percentage(&draft.highest_markup);
+
+                    draft.errors = EditErrors {
+                        lowest: lowest.as_ref().err().cloned(),
+                        average: average.as_ref().err().cloned(),
+                        highest: highest.as_ref().err().cloned(),
+                    };
+
+                    if let (Ok(rep), Ok(lowest), Ok(average), Ok(highest)) =
+                        (draft.rep.parse::<u8>(), lowest, average, highest)
+                    {
+
+                    let new_fence = Fence {
+                        name: draft.name.clone(),
+                        reputation: rep,
+                        lowest_markup: lowest,
+                        avg_markup: average,
+                        highest_markup: highest,
+                    };
+
+                    match &self.create_fence_state {
+                        EditState::Creating { .. } => self.fences.push(new_fence),
+                        EditState::Editing { index, .. } => {
+                            if let Some(slot) = self.fences.get_mut(*index) {
+                                *slot = new_fence;
+                            }
+                        },
+                        EditState::Idle => {}
+                    }
+
+                        self.create_fence_state = EditState::Idle;
+                    }
+                }
+            }
+        }
+        }
+    }
+
+fn fence_modal<'a>(
+    draft: &EditDraft,
+    is_editing: bool,
+) -> Element<'a, FenceMessage> {
+    let label = if is_editing { "Save" } else { "Create" };
+container(
                     column![
                         text("New Fence").size(24),
                         column![
@@ -148,7 +269,7 @@ impl AppScreen for FenceState {
                                 }
                             ]
                             .spacing(5),
-                            button(text("Create")).on_press(FenceMessage::Submit),
+                            button(label).on_press(FenceMessage::Submit),
                         ]
                         .spacing(10),
                     ]
@@ -156,112 +277,8 @@ impl AppScreen for FenceState {
                 )
                 .width(300)
                 .padding(10)
-                .style(container::rounded_box),
-            };
-            modal(base, content, FenceMessage::HideModal)
-        } else {
-            base
-        }
-    }
+                .style(container::rounded_box).into()
 
-    fn update(&mut self, message: FenceMessage) {
-        match message {
-            FenceMessage::BaseInputChanged(input) => {
-                self.base_price_input = input.clone();
-                match input.parse::<u64>() {
-                    Ok(value) => {
-                        self.parsed_base_price = Some(value);
-                        self.error = None;
-                    }
-                    Err(_) => {
-                        self.parsed_base_price = None;
-                        self.error = Some("Invalid number".into());
-                    }
-                }
-            }
-            FenceMessage::Name(name) => {
-                if let EditState::Editing(draft) = &mut self.create_fence_state {
-                    draft.name = name;
-                }
-            }
-            FenceMessage::Reputation(rep) => {
-                if let EditState::Editing(draft) = &mut self.create_fence_state {
-                    draft.rep = rep;
-                }
-            }
-            FenceMessage::Lowest(low) => {
-                if let EditState::Editing(draft) = &mut self.create_fence_state {
-                    draft.lowest_markup = low;
-                }
-            }
-            FenceMessage::Avg(avg) => {
-                if let EditState::Editing(draft) = &mut self.create_fence_state {
-                    draft.avg_markup = avg;
-                }
-            }
-            FenceMessage::Highest(high) => {
-                if let EditState::Editing(draft) = &mut self.create_fence_state {
-                    draft.highest_markup = high;
-                }
-            }
-            FenceMessage::ShowModal => {
-                if let EditState::Idle = self.create_fence_state {
-                    self.create_fence_state = EditState::Editing(EditDraft {
-                        name: String::new(),
-                        rep: String::new(),
-                        lowest_markup: String::new(),
-                        avg_markup: String::new(),
-                        highest_markup: String::new(),
-                        errors: EditErrors::default(),
-                    })
-                };
-                self.show_create_fence_modal = true;
-            }
-            FenceMessage::Edit(fence) => {
-                if let EditState::Idle = self.create_fence_state {
-                    self.create_fence_state = EditState::Editing(EditDraft {
-                        name: fence.name,
-                        rep: fence.reputation.to_string(),
-                        lowest_markup: fence.lowest_markup.to_string(),
-                        avg_markup: fence.avg_markup.to_string(),
-                        highest_markup: fence.highest_markup.to_string(),
-                        errors: EditErrors::default(),
-                    })
-                }
-            }
-            FenceMessage::HideModal => {
-                self.show_create_fence_modal = false;
-                self.create_fence_state = EditState::Idle
-            }
-            FenceMessage::Submit => {
-                if let EditState::Editing(draft) = &mut self.create_fence_state {
-                    let lowest = parse_human_percentage(&draft.lowest_markup);
-                    let average = parse_human_percentage(&draft.avg_markup);
-                    let highest = parse_human_percentage(&draft.highest_markup);
 
-                    draft.errors = EditErrors {
-                        lowest: lowest.as_ref().err().cloned(),
-                        average: average.as_ref().err().cloned(),
-                        highest: highest.as_ref().err().cloned(),
-                    };
-
-                    if let (Ok(rep), Ok(lowest), Ok(average), Ok(highest)) =
-                        (draft.rep.parse::<u8>(), lowest, average, highest)
-                    {
-                        let new_fence = Fence {
-                            name: draft.name.clone(),
-                            reputation: rep,
-                            lowest_markup: lowest,
-                            avg_markup: average,
-                            highest_markup: highest,
-                        };
-
-                        self.fences.push(new_fence);
-                        self.show_create_fence_modal = false;
-                        self.create_fence_state = EditState::Idle;
-                    }
-                }
-            }
-        }
-    }
 }
+
