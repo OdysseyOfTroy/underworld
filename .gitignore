@@ -1,1 +1,9 @@
 /target
+.env
+
+#database
+*.db
+
+# sql offline query cache
+.sqlx/
+

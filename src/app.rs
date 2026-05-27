@@ -2,6 +2,7 @@ use iced::{
     Element, Task,
     widget::{Button, Column, Row},
 };
+use sqlx::SqlitePool;
 
 use crate::ui::screens::cipher::{self, CipherState};
 use crate::ui::screens::fence::{self, FenceState};
@@ -27,6 +28,7 @@ pub trait AppScreen {
 }
 
 pub struct App {
+    pub db: SqlitePool,
     screen: Screen,
     fence: FenceState,
     cipher: CipherState,
@@ -40,9 +42,10 @@ impl App {
         }
     }
 
-    pub fn new() -> (Self, Task<Message>) {
+    pub fn new(pool: SqlitePool) -> (Self, Task<Message>) {
         (
             Self {
+                db: pool,
                 screen: Screen::Cipher,
                 fence: FenceState::default(),
                 cipher: CipherState::default(),
