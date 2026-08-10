@@ -1,5 +1,5 @@
-use sqlx::SqlitePool;
 use crate::db::merchants::Merchant;
+use sqlx::SqlitePool;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Group {

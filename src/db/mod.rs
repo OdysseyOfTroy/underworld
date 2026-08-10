@@ -1,21 +1,21 @@
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
 
+pub mod groups;
 pub mod items;
 pub mod merchants;
-pub mod groups;
 
 pub async fn init_pool(db_path: &str) -> Result<SqlitePool, sqlx::Error> {
     let pool = SqlitePoolOptions::new()
-                .max_connections(5)
-                .connect(&format!("sqlite://{}?mode=rwc", db_path))
-                .await?;
+        .max_connections(5)
+        .connect(&format!("sqlite://{}?mode=rwc", db_path))
+        .await?;
 
     run_migrations(&pool).await?;
     Ok(pool)
 }
 
 async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
-sqlx::query(
+    sqlx::query(
         "CREATE TABLE IF NOT EXISTS items (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             name        TEXT NOT NULL,

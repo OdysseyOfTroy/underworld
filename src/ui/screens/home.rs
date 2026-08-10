@@ -1,19 +1,18 @@
 use iced::Element;
 
-use crate::{app::AppScreen, ui::components::{card::card, layout::vert_stack}};
+use crate::{
+    app::AppScreen,
+    ui::components::{card::card, layout::vert_stack},
+};
 
 #[derive(Debug, Clone)]
-pub enum HomeMessage {
+pub enum HomeMessage {}
 
-}
-
-pub struct HomeState {
-
-}
+pub struct HomeState {}
 
 impl Default for HomeState {
     fn default() -> Self {
-       HomeState {  } 
+        HomeState {}
     }
 }
 
@@ -24,8 +23,5 @@ impl AppScreen for HomeState {
         card(vert_stack()).into()
     }
 
-    fn update(&mut self, message: HomeMessage) {
-
-    }
-
+    fn update(&mut self, message: HomeMessage) {}
 }

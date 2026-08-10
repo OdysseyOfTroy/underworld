@@ -1,11 +1,21 @@
 use std::time::Instant;
 
+use crate::ui::screens::fence::{self, FenceState};
+use crate::ui::{
+    components::sidebar,
+    screens::{
+        cipher::{self, CipherState},
+        home::{self, HomeState},
+        items::{self, ItemsState},
+    },
+};
 use iced::{
-    Animation, Element, Length, Subscription, Task, animation::Easing, widget::{Container, Row}, window,
+    Animation, Element, Length, Subscription, Task,
+    animation::Easing,
+    widget::{Container, Row},
+    window,
 };
 use sqlx::SqlitePool;
-use crate::ui::{components::sidebar, screens::{cipher::{self, CipherState}, home::{self, HomeState}}};
-use crate::ui::screens::fence::{self, FenceState};
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -13,6 +23,7 @@ pub enum Message {
     Fence(fence::FenceMessage),
     Cipher(cipher::CipherMessage),
     Home(home::HomeMessage),
+    Items(items::ItemsMessage),
     ToggleSidebar,
     Tick(Instant),
 }
@@ -22,6 +33,7 @@ pub enum Screen {
     Fence,
     Cipher,
     Home,
+    Items,
 }
 
 pub trait AppScreen {
@@ -37,6 +49,7 @@ pub struct App {
     fence: FenceState,
     cipher: CipherState,
     home: HomeState,
+    items: ItemsState,
     sidebar: Animation<bool>,
     now: Instant,
 }
@@ -46,10 +59,11 @@ impl App {
         (
             Self {
                 db: pool,
-                screen: Screen::Cipher,
+                screen: Screen::Home,
                 fence: FenceState::default(),
                 cipher: CipherState::default(),
                 home: HomeState::default(),
+                items: ItemsState::default(),
                 sidebar: Animation::new(true).easing(Easing::EaseInOut).quick(),
                 now: Instant::now(),
             },
@@ -57,28 +71,26 @@ impl App {
         )
     }
 
-pub fn view(&self) -> Element<'_, Message> {
-    let width = self.sidebar.interpolate(sidebar::COLLAPSED_WIDTH, sidebar::EXPANDED_WIDTH, self.now);
+    pub fn view(&self) -> Element<'_, Message> {
+        let width =
+            self.sidebar
+                .interpolate(sidebar::COLLAPSED_WIDTH, sidebar::EXPANDED_WIDTH, self.now);
 
-    let expanded = self.sidebar.value();
+        let expanded = self.sidebar.value();
 
-    let sidebar = sidebar::view(width, expanded, self.screen);
+        let sidebar = sidebar::view(width, expanded, self.screen);
 
-    let screen_view = match self.screen {
-        Screen::Fence => self.fence.view().map(Message::Fence),
-        Screen::Cipher => self.cipher.view().map(Message::Cipher),
-        Screen::Home => self.home.view().map(Message::Home),
-    };
+        let screen_view = match self.screen {
+            Screen::Fence => self.fence.view().map(Message::Fence),
+            Screen::Cipher => self.cipher.view().map(Message::Cipher),
+            Screen::Home => self.home.view().map(Message::Home),
+            Screen::Items => self.items.view().map(Message::Items),
+        };
 
-    let main_content = Container::new(screen_view)
-        .padding(20)
-        .width(Length::Fill);
+        let main_content = Container::new(screen_view).padding(20).width(Length::Fill);
 
-    Row::new()
-        .push(sidebar)
-        .push(main_content)
-        .into()
-}
+        Row::new().push(sidebar).push(main_content).into()
+    }
 
     pub fn update(&mut self, message: Message) {
         match message {
@@ -86,6 +98,7 @@ pub fn view(&self) -> Element<'_, Message> {
             Message::Fence(msg) => self.fence.update(msg),
             Message::Cipher(msg) => self.cipher.update(msg),
             Message::Home(msg) => self.home.update(msg),
+            Message::Items(msg) => self.items.update(msg),
             Message::ToggleSidebar => {
                 let now = Instant::now();
                 let target = self.sidebar.value();
