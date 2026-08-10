@@ -1,9 +1,10 @@
+use std::time::Instant;
+
 use iced::{
-    Element, Task, Length,
-    widget::{Row, Container},
+    Animation, Element, Length, Subscription, Task, animation::Easing, widget::{Container, Row}, window,
 };
 use sqlx::SqlitePool;
-use crate::ui::{components::sidebar, screens::cipher::{self, CipherState}};
+use crate::ui::{components::sidebar, screens::{cipher::{self, CipherState}, home::{self, HomeState}}};
 use crate::ui::screens::fence::{self, FenceState};
 
 #[derive(Debug, Clone)]
@@ -11,13 +12,16 @@ pub enum Message {
     Navigate(Screen),
     Fence(fence::FenceMessage),
     Cipher(cipher::CipherMessage),
+    Home(home::HomeMessage),
     ToggleSidebar,
+    Tick(Instant),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Screen {
     Fence,
     Cipher,
+    Home,
 }
 
 pub trait AppScreen {
@@ -32,17 +36,12 @@ pub struct App {
     screen: Screen,
     fence: FenceState,
     cipher: CipherState,
-    sidebar_collapsed: bool,
+    home: HomeState,
+    sidebar: Animation<bool>,
+    now: Instant,
 }
 
 impl App {
-    pub fn title(&self) -> String {
-        match self.screen {
-            Screen::Fence => "Fence Calculator".into(),
-            Screen::Cipher => "Cipher Tool".into(),
-        }
-    }
-
     pub fn new(pool: SqlitePool) -> (Self, Task<Message>) {
         (
             Self {
@@ -50,18 +49,25 @@ impl App {
                 screen: Screen::Cipher,
                 fence: FenceState::default(),
                 cipher: CipherState::default(),
-                sidebar_collapsed: false,
+                home: HomeState::default(),
+                sidebar: Animation::new(true).easing(Easing::EaseInOut).quick(),
+                now: Instant::now(),
             },
             Task::none(),
         )
     }
 
 pub fn view(&self) -> Element<'_, Message> {
-    let sidebar = sidebar::view(self.sidebar_collapsed, self.screen);
+    let width = self.sidebar.interpolate(sidebar::COLLAPSED_WIDTH, sidebar::EXPANDED_WIDTH, self.now);
+
+    let expanded = self.sidebar.value();
+
+    let sidebar = sidebar::view(width, expanded, self.screen);
 
     let screen_view = match self.screen {
         Screen::Fence => self.fence.view().map(Message::Fence),
         Screen::Cipher => self.cipher.view().map(Message::Cipher),
+        Screen::Home => self.home.view().map(Message::Home),
     };
 
     let main_content = Container::new(screen_view)
@@ -79,7 +85,22 @@ pub fn view(&self) -> Element<'_, Message> {
             Message::Navigate(screen) => self.screen = screen,
             Message::Fence(msg) => self.fence.update(msg),
             Message::Cipher(msg) => self.cipher.update(msg),
-            Message::ToggleSidebar => self.sidebar_collapsed = !self.sidebar_collapsed,
+            Message::Home(msg) => self.home.update(msg),
+            Message::ToggleSidebar => {
+                let now = Instant::now();
+                let target = self.sidebar.value();
+                self.sidebar.go_mut(!target, now);
+                self.now = now;
+            }
+            Message::Tick(now) => self.now = now,
+        }
+    }
+
+    pub fn subscription(&self) -> Subscription<Message> {
+        if self.sidebar.is_animating(Instant::now()) {
+            window::frames().map(|_| Message::Tick(Instant::now()))
+        } else {
+            Subscription::none()
         }
     }
 }
