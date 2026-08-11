@@ -104,7 +104,7 @@ impl AppScreen for FenceState {
                 &self.error,
                 FenceMessage::Edit(i),
             )
-        })));
+        })).spacing(16));
         let base = screen(
             vstack()
                 .push(button("Add").on_press(FenceMessage::ShowModal))

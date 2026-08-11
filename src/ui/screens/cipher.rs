@@ -1,9 +1,8 @@
 use iced::{
-    Element,
-    widget::{TextInput, button, row, text},
+    Element, alignment::Vertical, widget::{TextInput, button, row, text},
 };
 
-use crate::ui::components::basic::labeled;
+use crate::ui::components::basic::{h1, labeled};
 use crate::ui::components::layout::{panel, screen, vstack};
 
 use crate::{
@@ -43,25 +42,27 @@ impl AppScreen for CipherState {
 
         let caesar_cipher = panel(
             vstack()
+                .push(h1("Caesar"))
                 .push(row![
-                    button("Increment").on_press(CipherMessage::Increment),
-                    text(self.caesar_cipher.shift),
                     button("Decrement").on_press(CipherMessage::Decrement),
-                ])
+                    text(self.caesar_cipher.shift),
+                    button("Increment").on_press(CipherMessage::Increment),
+                ].spacing(16).align_y(Vertical::Center))
                 .push(labeled(
-                    "the caesar encrypted string: ",
+                    "encrypted string: ",
                     text(&self.caesar_encrypted),
                 )),
         );
 
         let vigenere_cipher = panel(
             vstack()
+                .push(h1("Vigenere"))
                 .push(row![
                     TextInput::new("keyword", &self.vigenere_keyword)
                         .on_input(CipherMessage::ContentChanged)
                 ])
                 .push(labeled(
-                    "the vigenere encrypted string: ",
+                    "encrypted string: ",
                     text(&self.vigenere_encrypted),
                 )),
         );
