@@ -1,4 +1,6 @@
-use crate::app::App;
+use iced::Theme;
+
+use crate::{app::App, ui::colours::THIEVES_TOOLKIT_THEME};
 
 pub mod app;
 pub mod db;
@@ -14,5 +16,6 @@ async fn main() -> iced::Result {
         .title("Thieves Toolkit")
         .subscription(App::subscription)
         .font(iced_fonts::LUCIDE_FONT_BYTES)
+        .theme(Theme::custom("ThievesTkTheme", THIEVES_TOOLKIT_THEME))
         .run()
 }
