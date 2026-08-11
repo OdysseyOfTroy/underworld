@@ -1,12 +1,20 @@
-use crate::model::fence::Fence;
+use crate::model::fence::{Fence, Percentage};
 use crate::ui::components::layout::vstack;
 use crate::ui::screens::fence::FenceMessage;
-use iced::widget::{Container, container};
+use iced::widget::{Column, Container, container};
 use iced::{Background, Border, Color, Length, Theme};
 use iced::{
     Element,
     widget::{Row, Text, button},
 };
+
+pub fn markup_string<'a>(
+    label: & str,
+    markup: Percentage,
+    value: u64,
+) -> Text<'a> {
+Text::new(format!("{}: {} - {}", label, markup, value))
+}
 
 pub fn fence_card<'a>(
     fence: &Fence,
@@ -24,24 +32,17 @@ pub fn fence_card<'a>(
     Container::new(
         vstack()
             .push(Row::new().push(button("Edit").on_press(on_edit)))
-            .push(
-                Row::new()
-                    .spacing(20)
-                    .push(Text::new(format!("Low markup: {}", fence.lowest_markup)))
-                    .push(Text::new(format!("Avg markup: {}", fence.avg_markup)))
-                    .push(Text::new(format!("High markup: {}", fence.highest_markup))),
-            )
             .push(if let Some((low, avg, high)) = computed_prices {
-                Row::new()
-                    .spacing(20)
-                    .push(Text::new(format!("Low: {}", low)))
-                    .push(Text::new(format!("Avg: {}", avg)))
-                    .push(Text::new(format!("High: {}", high)))
+                Column::new()
+                    .spacing(16)
+                    .push(markup_string("Low Markup", fence.lowest_markup, low))
+                    .push(markup_string("Avg Markup", fence.avg_markup, avg))
+                    .push(markup_string("High Markup", fence.highest_markup, high))
             } else if let Some(error) = error {
-                Row::new().push(Text::new(error))
-            } else {
-                Row::new().push(Text::new("Enter a valid base price"))
-            }),
+                    Column::new().push(Text::new(error))
+                } else {
+                    Column::new().push(Text::new("Enter a valid base price")) 
+                })
     )
     .style(|_theme: &Theme| container::Style {
         background: Some(Background::Color(Color::from_rgb8(48, 35, 28))),

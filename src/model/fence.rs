@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Percentage(pub u64);
 
 #[derive(Debug, PartialEq, Clone)]
@@ -59,9 +59,9 @@ impl fmt::Display for Percentage {
         let fraction = self.0 % 10;
 
         if fraction == 0 {
-            write!(f, "{whole}% markup")
+            write!(f, "{whole}%")
         } else {
-            write!(f, "{whole}.{fraction}% markup")
+            write!(f, "{whole}.{fraction}%")
         }
     }
 }
