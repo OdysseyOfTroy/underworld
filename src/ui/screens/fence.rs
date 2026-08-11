@@ -5,8 +5,11 @@ use iced::{
 };
 
 use crate::model::fence::{Percentage, PercentageError, parse_human_percentage};
-use crate::ui::components::modal::modal;
-use crate::ui::components::{card::card, fence_card::fence_card, layout::vstack};
+use crate::ui::components::{
+    fence_card::fence_card,
+    layout::{screen, vstack},
+    modal::modal,
+};
 
 use crate::{app::AppScreen, model::fence::Fence};
 
@@ -102,7 +105,7 @@ impl AppScreen for FenceState {
                 FenceMessage::Edit(i),
             )
         })));
-        let base = card(
+        let base = screen(
             vstack()
                 .push(button("Add").on_press(FenceMessage::ShowModal))
                 .push(
@@ -112,7 +115,8 @@ impl AppScreen for FenceState {
                 )
                 .height(1200)
                 .push(col),
-        );
+        )
+        .into();
 
         match &self.create_fence_state {
             EditState::Idle => base,

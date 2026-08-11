@@ -1,4 +1,7 @@
-use iced::{Background, Border, Element, Length, Theme, widget::{Column, Container, Row, container}};
+use iced::{
+    Background, Border, Element, Length, Theme,
+    widget::{Column, Container, Row, container},
+};
 
 use crate::ui::colours;
 
@@ -11,9 +14,7 @@ pub fn hstack<'a, Message>() -> Row<'a, Message> {
 }
 
 pub fn screen<'a, Message: 'a>(content: impl Into<Element<'a, Message>>) -> Container<'a, Message> {
-    Container::new(content)
-        .padding(16)
-        .width(Length::Fill)
+    Container::new(content).padding(16).width(Length::Fill)
 }
 
 pub fn panel<'a, Message: 'a>(content: impl Into<Element<'a, Message>>) -> Container<'a, Message> {

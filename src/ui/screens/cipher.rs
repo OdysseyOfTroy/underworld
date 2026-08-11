@@ -3,7 +3,8 @@ use iced::{
     widget::{TextInput, button, row, text},
 };
 
-use crate::ui::components::{card::card, layout::vstack};
+use crate::ui::components::basic::labeled;
+use crate::ui::components::layout::{panel, screen, vstack};
 
 use crate::{
     app::AppScreen,
@@ -37,34 +38,40 @@ impl AppScreen for CipherState {
     type Msg = CipherMessage;
 
     fn view(&self) -> Element<'_, CipherMessage> {
-        card(
+        let text_input = TextInput::new("text to encrypt", &self.to_encrypt)
+            .on_input(CipherMessage::InputChanged);
+
+        let caesar_cipher = panel(
             vstack()
                 .push(row![
-                    TextInput::new("text to encrypt", &self.to_encrypt)
-                        .on_input(CipherMessage::InputChanged)
+                    button("Increment").on_press(CipherMessage::Increment),
+                    text(self.caesar_cipher.shift),
+                    button("Decrement").on_press(CipherMessage::Decrement),
                 ])
+                .push(labeled(
+                    "the caesar encrypted string: ",
+                    text(&self.caesar_encrypted),
+                )),
+        );
+
+        let vigenere_cipher = panel(
+            vstack()
                 .push(row![
-                    vstack().push(
-                        row![
-                            button("Increment").on_press(CipherMessage::Increment),
-                            text(self.caesar_cipher.shift),
-                            button("Decrement").on_press(CipherMessage::Decrement),
-                        ])
-                        .push(row![
-                            text("the caesar encrypted string: "),
-                            text(&self.caesar_encrypted)
-                        ]),
-                    vstack().push(
-                        row![
-                            TextInput::new("keyword", &self.vigenere_keyword)
-                                .on_input(CipherMessage::ContentChanged)
-                        ])
-                        .push(row![
-                            text("the vigenere encrypted string: "),
-                            text(&self.vigenere_encrypted)
-                        ]),
-                ]),
+                    TextInput::new("keyword", &self.vigenere_keyword)
+                        .on_input(CipherMessage::ContentChanged)
+                ])
+                .push(labeled(
+                    "the vigenere encrypted string: ",
+                    text(&self.vigenere_encrypted),
+                )),
+        );
+
+        screen(
+            vstack()
+                .push(text_input)
+                .push(row![caesar_cipher, vigenere_cipher,].spacing(16)),
         )
+        .into()
     }
 
     fn update(&mut self, message: CipherMessage) {
