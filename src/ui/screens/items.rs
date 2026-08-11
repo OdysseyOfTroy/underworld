@@ -2,7 +2,7 @@ use iced::Element;
 
 use crate::{
     app::AppScreen,
-    ui::components::{card::card, layout::vert_stack},
+    ui::components::{card::card, layout::vstack},
 };
 
 #[derive(Debug, Clone)]
@@ -15,7 +15,7 @@ impl AppScreen for ItemsState {
     type Msg = ItemsMessage;
 
     fn view(&self) -> Element<'_, ItemsMessage> {
-        card(vert_stack()).into()
+        card(vstack())
     }
 
     fn update(&mut self, message: ItemsMessage) {}

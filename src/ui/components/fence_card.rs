@@ -1,5 +1,5 @@
 use crate::model::fence::Fence;
-use crate::ui::components::layout::vert_stack;
+use crate::ui::components::layout::vstack;
 use crate::ui::screens::fence::FenceMessage;
 use iced::widget::{Container, container};
 use iced::{Background, Border, Color, Length, Theme};
@@ -22,7 +22,7 @@ pub fn fence_card<'a>(
         )
     });
     Container::new(
-        vert_stack()
+        vstack()
             .push(Row::new().push(button("Edit").on_press(on_edit)))
             .push(
                 Row::new()

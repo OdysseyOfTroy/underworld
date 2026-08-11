@@ -6,7 +6,7 @@ use iced::{
 
 use crate::model::fence::{Percentage, PercentageError, parse_human_percentage};
 use crate::ui::components::modal::modal;
-use crate::ui::components::{card::card, fence_card::fence_card, layout::vert_stack};
+use crate::ui::components::{card::card, fence_card::fence_card, layout::vstack};
 
 use crate::{app::AppScreen, model::fence::Fence};
 
@@ -94,7 +94,7 @@ impl AppScreen for FenceState {
     type Msg = FenceMessage;
 
     fn view(&self) -> Element<'_, FenceMessage> {
-        let col = vert_stack().push(column(self.fences.iter().enumerate().map(|(i, fence)| {
+        let col = vstack().push(column(self.fences.iter().enumerate().map(|(i, fence)| {
             fence_card(
                 fence,
                 self.parsed_base_price,
@@ -103,7 +103,7 @@ impl AppScreen for FenceState {
             )
         })));
         let base = card(
-            vert_stack()
+            vstack()
                 .push(button("Add").on_press(FenceMessage::ShowModal))
                 .push(
                     TextInput::new("Enter base price", &self.base_price_input)

@@ -3,7 +3,7 @@ use iced::{
     widget::{TextInput, button, row, text},
 };
 
-use crate::ui::components::{card::card, layout::vert_stack};
+use crate::ui::components::{card::card, layout::vstack};
 
 use crate::{
     app::AppScreen,
@@ -38,13 +38,13 @@ impl AppScreen for CipherState {
 
     fn view(&self) -> Element<'_, CipherMessage> {
         card(
-            vert_stack()
+            vstack()
                 .push(row![
                     TextInput::new("text to encrypt", &self.to_encrypt)
                         .on_input(CipherMessage::InputChanged)
                 ])
                 .push(row![
-                    vert_stack().push(
+                    vstack().push(
                         row![
                             button("Increment").on_press(CipherMessage::Increment),
                             text(self.caesar_cipher.shift),
@@ -54,7 +54,7 @@ impl AppScreen for CipherState {
                             text("the caesar encrypted string: "),
                             text(&self.caesar_encrypted)
                         ]),
-                    vert_stack().push(
+                    vstack().push(
                         row![
                             TextInput::new("keyword", &self.vigenere_keyword)
                                 .on_input(CipherMessage::ContentChanged)
